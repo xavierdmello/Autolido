@@ -8,64 +8,66 @@ from brownie import (
     Contract,
     interface,
 )
+from scripts.autolido import (
+    burn_underlying,
+    cToken,
+    deploy_autolido,
+    deposit,
+    mint_underlying,
+    underlying,
+    withdraw,
+)
 from scripts.helpful import load_accounts
 
 
 def test_deposit():
+    # Arrange
     load_accounts()
-    AMOUNT = 1 * 10**5  # 0.1 USDC
-    musdc = interface.CErc20Interface(
-        config["networks"][network.show_active()]["musdc"]
-    )
-    usdc = Contract.from_abi("USDC", musdc.underlying(), AnyswapV5ERC20.abi)
+    AMOUNT = 1 * 10 ** (underlying().decimals() - 1)  # 0.1 of underlying token
     if network.show_active() == "moonriver-fork":
-        # mint USDC
-        usdc.mint(
-            accounts[0],
-            AMOUNT,
-            {"from": config["networks"][network.show_active()]["usdc_minter"]},
-        )
+        mint_underlying(AMOUNT)
+    # Make sure user has enough of underlying assset in account to mint
+    assert underlying().balanceOf(accounts[0]) >= AMOUNT
+    autolido = deploy_autolido()
 
-    assert usdc.balanceOf(accounts[0]) >= AMOUNT
+    # Act
+    # Deposit underlying asset
+    deposit(autolido, AMOUNT)
 
-    autolido = Autolido.deploy(musdc, {"from": accounts[0]})
-
-    # deposit USDC
-    usdc.approveAndCall(autolido, AMOUNT, "", {"from": accounts[0]})
-
-    # check balance
-    assert autolido.balances(accounts[0]) == AMOUNT
+    # Assert
     if network.show_active() == "moonriver-fork":
         # mine block to make sure balanceOfUnderlying() calls on the correct block
         chain.mine()
-    assert musdc.balanceOfUnderlying.call(autolido, {"from": accounts[0]}) == AMOUNT
-    assert usdc.balanceOf(accounts[0]) == 0
+    assert cToken().balanceOfUnderlying.call(autolido, {"from": accounts[0]}) == AMOUNT
+    assert underlying().balanceOf(accounts[0]) == 0
+    assert autolido.cTokenBalances(accounts[0]) == cToken().balanceOf(autolido)
+
+    # Cleanup (withdraw & burn underlying so balances are correct if underlying asset is being used again in same VM instance)
+    withdraw(autolido, autolido.cTokenBalances(accounts[0]))
+    if network.show_active() == "moonriver-fork":
+        burn_underlying(AMOUNT)
 
 
-# def test_withdraw():
-#     load_accounts()
-#     AMOUNT = 1 * 10**5  # 0.1 USDC
-#     musdc = interface.CErc20Interface(
-#         config["networks"][network.show_active()]["musdc"]
-#     )
-#     usdc = Contract.from_abi("USDC", musdc.underlying(), AnyswapV5ERC20.abi)
-#     if network.show_active() == "moonriver-fork":
-#         # mint USDC
-#         usdc.mint(
-#             accounts[0],
-#             AMOUNT,
-#             {"from": config["networks"][network.show_active()]["usdc_minter"]},
-#         )
-#     assert usdc.balanceOf(accounts[0]) >= AMOUNT
-#     autolido = Autolido.deploy(musdc, {"from": accounts[0]})
-#     # deposit USDC
-#     usdc.approveAndCall(vault, AMOUNT, "", {"from": accounts[0]})
+def test_withdraw():
+    # Arrange
+    load_accounts()
+    AMOUNT = 1 * 10 ** (underlying().decimals() - 1)  # 0.1 of underlying token
+    if network.show_active() == "moonriver-fork":
+        mint_underlying(AMOUNT)
+    # Make sure user has enough of underlying assset in account to mint
+    assert underlying().balanceOf(accounts[0]) >= AMOUNT
+    autolido = deploy_autolido()
+    deposit(autolido, AMOUNT)
 
-#     # withdraw USDC
-#     autolido.withdraw(AMOUNT, {"from": accounts[0]})
+    # Act
+    # Withdraw underlying asset
+    withdraw(autolido, autolido.cTokenBalances(accounts[0]))
 
-#     # check balance
-#     assert vault.balances(accounts[0]) == 0
-#     assert vault.balance() == 0
-#     assert usdc.balanceOf(vault) == 0
-#     assert usdc.balanceOf(accounts[0]) == AMOUNT
+    # Assert
+    assert autolido.cTokenBalances(accounts[0]) == 0
+    assert underlying().balanceOf(accounts[0]) == AMOUNT
+    assert cToken().balanceOf(autolido) == 0
+
+    # Cleanup (burn underlying so balances are correct if underlying asset is being used again in same VM instance)
+    if network.show_active() == "moonriver-fork":
+        burn_underlying(AMOUNT)

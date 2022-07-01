@@ -2,34 +2,39 @@
 pragma solidity ^0.8.0;
 import "./AnyswapV5ERC20.sol";
 import "../interfaces/CErc20Interfaces.sol";
+import "../interfaces/EIP20Interface.sol";
 
 contract Autolido {
-    AnyswapV5ERC20 public USDC;
-    CErc20Interface public mUSDC;
-    mapping(address => uint256) public balances;
+    AnyswapV5ERC20 public collateralToken; // USDC.multi
+    CErc20Interface public cToken; // cUSDC
+    EIP20Interface public borrowToken; // xcKSM
+    mapping(address => uint256) public cTokenBalances; // number of cTokens user owns in autolido
 
-    constructor(address musdc_address) {
-        mUSDC = CErc20Interface(musdc_address);
-        USDC = AnyswapV5ERC20(mUSDC.underlying());
+    constructor(address cTokenAddress) {
+        cToken = CErc20Interface(cTokenAddress);
+        collateralToken = AnyswapV5ERC20(cToken.underlying());
     }
     
-    function balance() public view returns(uint) {
-        return mUSDC.balanceOf(address(this));
-    }
-
     // When approveAndCall() is called on the USDC contract
     // This allows tokens to be approved and deposited in one transcation
     function onTokenApproval(address owner, uint256 value, bytes memory data) external returns(bool){
-        balances[owner] += value;
-        USDC.transferFrom(owner, address(this), value);
-        USDC.approve(address(mUSDC), value);
-        assert(mUSDC.mint(value)==0);
+        cTokenBalances[owner] += (value*10**18)/cToken.exchangeRateCurrent();
+        collateralToken.transferFrom(owner, address(this), value);
+        collateralToken.approve(address(cToken), value);
+        assert(cToken.mint(value)==0);
         return true;
     }
 
-    function withdraw(uint256 amount) public {
-        require(amount <= balances[msg.sender]);
-        balances[msg.sender] -= amount;
-        USDC.transfer(msg.sender, amount);
+    // redeemTokens: amount of cTokens to redeem from Moonwell
+    function withdraw(uint256 redeemTokens) public {
+        uint balanceBefore = collateralToken.balanceOf(address(this));
+        require(redeemTokens <= cTokenBalances[msg.sender], "Withdrawal amount exceeds balance");
+
+        cTokenBalances[msg.sender] -= redeemTokens;
+
+        require(cToken.redeem(redeemTokens)==0, "Withdrawal error");
+
+        uint balanceAfter = collateralToken.balanceOf(address(this));
+        collateralToken.transfer(msg.sender, balanceAfter-balanceBefore);
     }
 }

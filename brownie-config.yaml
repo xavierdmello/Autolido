@@ -2,13 +2,10 @@ dotenv: .env
 keys: ${KEYS}
 networks:
     moonriver:
-        usdc: "0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D"
-        musdc: "0xd0670AEe3698F66e2D4dAf071EB9c690d978BFA8"
-        usdc_minter: "0x10c6b61DbF44a083Aec3780aCF769C77BE747E23"
+        cToken: "0xd0670AEe3698F66e2D4dAf071EB9c690d978BFA8" # mUSDC
     moonriver-fork:
-        usdc: "0xE3F5a90F9cb311505cd691a46596599aA1A0AD7D"
-        musdc: "0xd0670AEe3698F66e2D4dAf071EB9c690d978BFA8"
-        usdc_minter: "0x10c6b61DbF44a083Aec3780aCF769C77BE747E23"
+        cToken: "0xd0670AEe3698F66e2D4dAf071EB9c690d978BFA8" # mUSDC
         cmd_settings:
             unlock:
+                # Address of first minter in minters array of underlying token
                 - 0x10c6b61DbF44a083Aec3780aCF769C77BE747E23

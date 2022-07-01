@@ -9,6 +9,7 @@ abstract contract ComptrollerInterface {
 
     function enterMarkets(address[] calldata cTokens) virtual external returns (uint[] memory);
     function exitMarket(address cToken) virtual external returns (uint);
+    function getAssetsIn(address account) virtual external view returns (address[] memory);
 
     /*** Policy Hooks ***/
 
