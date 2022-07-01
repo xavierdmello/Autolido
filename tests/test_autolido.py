@@ -20,20 +20,18 @@ def test_deposit():
     usdc = Contract.from_abi("USDC", musdc.underlying(), AnyswapV5ERC20.abi)
     if network.show_active() == "moonriver-fork":
         # mint USDC
-        tx = usdc.mint(
+        usdc.mint(
             accounts[0],
             AMOUNT,
             {"from": config["networks"][network.show_active()]["usdc_minter"]},
         )
-        tx.wait(1)
 
     assert usdc.balanceOf(accounts[0]) >= AMOUNT
 
     autolido = Autolido.deploy(musdc, {"from": accounts[0]})
 
     # deposit USDC
-    tx = usdc.approveAndCall(autolido, AMOUNT, "", {"from": accounts[0]})
-    tx.wait(1)
+    usdc.approveAndCall(autolido, AMOUNT, "", {"from": accounts[0]})
 
     # check balance
     assert autolido.balances(accounts[0]) == AMOUNT

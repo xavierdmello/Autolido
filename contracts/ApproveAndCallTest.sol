@@ -2,6 +2,8 @@
 pragma solidity ^0.8.0;
 import "./AnyswapV5ERC20.sol";
 
+// Contract for testing USDC.multi's approveAndCall() functionality
+// Will be used to approve and deposit USDC in a single transaction
 contract Vault {
     AnyswapV5ERC20 public USDC;
     mapping(address => uint256) public balances;
