@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: BSD-3-Clause
 pragma solidity ^0.8.10;
+import "./PriceOracle.sol";
 
 abstract contract ComptrollerInterface {
+    // Avalible function signatures added to be used by Autolido
+    function getAssetsIn(address account) virtual external view returns (address[] memory);
+    function markets(address cTokenAddress) virtual external view returns (bool, uint, bool);
+    function getAllMarkets() virtual external view returns (address[] memory);
+    function oracle() virtual external view returns (PriceOracle);
+
     /// @notice Indicator that this is a Comptroller contract (for inspection)
     bool public constant isComptroller = true;
 
@@ -9,7 +16,7 @@ abstract contract ComptrollerInterface {
 
     function enterMarkets(address[] calldata cTokens) virtual external returns (uint[] memory);
     function exitMarket(address cToken) virtual external returns (uint);
-    function getAssetsIn(address account) virtual external view returns (address[] memory);
+
 
     /*** Policy Hooks ***/
 
