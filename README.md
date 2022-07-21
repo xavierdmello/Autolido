@@ -7,7 +7,4 @@ Not for a while. First, a development command-line version will be released. For
 ### Can I try it right now?
 Autolido is nowhere near feature complete yet and won't work as intended.
 
-If you are brave, feel free to test out features and go through the code with [Brownie](https://github.com/eth-brownie/brownie).
-
-### Update 7/8/2022:
-This project will migrate from [Brownie](https://github.com/eth-brownie/brownie) to [Hardhat](https://hardhat.org/) as forking & starting ganache is exceedingly slow as is. Expect delays in development.
+If you are brave, feel free to test out features and go through the code with [Hardhat](https://hardhat.org/).

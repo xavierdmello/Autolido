@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import "./AnyswapV5ERC20.sol";
-import "../interfaces/CErc20Interfaces.sol";
-import "../interfaces/EIP20Interface.sol";
-import "../interfaces/PriceOracle.sol";
+import "./CErc20Interfaces.sol";
+import "./EIP20Interface.sol";
+import "./PriceOracle.sol";
 
 contract Autolido {
-    uint safteyMargin; // 80% of LTV by default
-    uint ltvDeviationThreshold = 5; // 5%    
+    uint public safteyMargin; // 80% of LTV by default
+    uint public ltvDeviationThreshold = 5; // 5%    
     mapping(address => uint256) public balances; // number of collateralCTokens user owns in autolido
     address public owner;
 
@@ -50,11 +50,11 @@ contract Autolido {
         balances[owner] += (value*10**18)/collateralCToken.exchangeRateCurrent();
         collateralToken.transferFrom(owner, address(this), value);
         collateralToken.approve(address(collateralCToken), value);
-        assert(collateralCToken.mint(value)==0);    
+        require(collateralCToken.mint(value)==0, "Minting error");    
 
         // Borrow borrowToken
         // TODO: Make sure borrow won't push autolido into liquidation range before a borrow (it shouldn't, but hey, who knows?)
-        borrowCToken.borrow(amountToBorrow(value));
+        // require(borrowCToken.borrow(amountToBorrow(value))==0, "Borrow error");
     }
     
     // Calculates safe amount to borrow in borrow token, given amount of collateral token

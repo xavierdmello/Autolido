@@ -1,0 +1,183 @@
+diff --git a/node_modules/hardhat/internal/hardhat-network/jsonrpc/client.js b/node_modules/hardhat/internal/hardhat-network/jsonrpc/client.js
+index 70a28b7..d34ea89 100644
+--- a/node_modules/hardhat/internal/hardhat-network/jsonrpc/client.js
++++ b/node_modules/hardhat/internal/hardhat-network/jsonrpc/client.js
+@@ -50,6 +50,88 @@ class JsonRpcClient {
+     async getDebugTraceTransaction(transactionHash) {
+         return this._perform("debug_traceTransaction", [(0, ethereumjs_util_1.bufferToHex)(transactionHash)], t.object, () => undefined);
+     }
++    // addAccessList isn't included with the block
++  addAccessList(method, rawResult) {
++    if (
++      method.startsWith('eth_getBlock') &&
++      rawResult &&
++      rawResult.transactions?.length
++    ) {
++      rawResult.transactions.forEach((t) => {
++        if (t.accessList == null) t.accessList = [];
++      });
++    }
++  }
++  async _perform(method, params, tType, getMaxAffectedBlockNumber) {
++    const cacheKey = this._getCacheKey(method, params);
++    const cachedResult = this._getFromCache(cacheKey);
++    if (cachedResult !== undefined) {
++      return cachedResult;
++    }
++    if (this._forkCachePath !== undefined) {
++      const diskCachedResult = await this._getFromDiskCache(
++        this._forkCachePath,
++        cacheKey,
++        tType
++      );
++      if (diskCachedResult !== undefined) {
++        this._storeInCache(cacheKey, diskCachedResult);
++        return diskCachedResult;
++      }
++    }
++    const rawResult = await this._send(method, params);
++    this.addAccessList(method, rawResult);
++    const decodedResult = (0, decodeJsonRpcResponse_1.decodeJsonRpcResponse)(
++      rawResult,
++      tType
++    );
++    const blockNumber = getMaxAffectedBlockNumber(decodedResult);
++    if (this._canBeCached(blockNumber)) {
++      this._storeInCache(cacheKey, decodedResult);
++      if (this._forkCachePath !== undefined) {
++        await this._storeInDiskCache(this._forkCachePath, cacheKey, rawResult);
++      }
++    }
++    return decodedResult;
++  }
++  async _performBatch(batch, getMaxAffectedBlockNumber) {
++    // Perform Batch caches the entire batch at once.
++    // It could implement something more clever, like caching per request
++    // but it's only used in one place, and those other requests aren't
++    // used anywhere else.
++    const cacheKey = this._getBatchCacheKey(batch);
++    const cachedResult = this._getFromCache(cacheKey);
++    if (cachedResult !== undefined) {
++      return cachedResult;
++    }
++    if (this._forkCachePath !== undefined) {
++      const diskCachedResult = await this._getBatchFromDiskCache(
++        this._forkCachePath,
++        cacheKey,
++        batch.map((b) => b.tType)
++      );
++      if (diskCachedResult !== undefined) {
++        this._storeInCache(cacheKey, diskCachedResult);
++        return diskCachedResult;
++      }
++    }
++    const rawResults = await this._sendBatch(batch);
++    const decodedResults = rawResults.map((result, i) => {
++      this.addAccessList(batch[i].method, result);
++      return (0, decodeJsonRpcResponse_1.decodeJsonRpcResponse)(
++        result,
++        batch[i].tType
++      );
++    });
++    const blockNumber = getMaxAffectedBlockNumber(decodedResults);
++    if (this._canBeCached(blockNumber)) {
++      this._storeInCache(cacheKey, decodedResults);
++      if (this._forkCachePath !== undefined) {
++        await this._storeInDiskCache(this._forkCachePath, cacheKey, rawResults);
++      }
++    }
++    return decodedResults;
++  }
+     // Storage key must be 32 bytes long
+     async getStorageAt(address, position, blockNumber) {
+         return this._perform("eth_getStorageAt", [
+@@ -299,6 +381,88 @@ class JsonRpcClient {
+         const maxSafeBlockNumber = this._latestBlockNumberOnCreation - this._maxReorg;
+         return blockNumber > maxSafeBlockNumber;
+     }
++    // addAccessList isn't included with the block
++  addAccessList(method, rawResult) {
++    if (
++      method.startsWith('eth_getBlock') &&
++      rawResult &&
++      rawResult.transactions?.length
++    ) {
++      rawResult.transactions.forEach((t) => {
++        if (t.accessList == null) t.accessList = [];
++      });
++    }
++  }
++  async _perform(method, params, tType, getMaxAffectedBlockNumber) {
++    const cacheKey = this._getCacheKey(method, params);
++    const cachedResult = this._getFromCache(cacheKey);
++    if (cachedResult !== undefined) {
++      return cachedResult;
++    }
++    if (this._forkCachePath !== undefined) {
++      const diskCachedResult = await this._getFromDiskCache(
++        this._forkCachePath,
++        cacheKey,
++        tType
++      );
++      if (diskCachedResult !== undefined) {
++        this._storeInCache(cacheKey, diskCachedResult);
++        return diskCachedResult;
++      }
++    }
++    const rawResult = await this._send(method, params);
++    this.addAccessList(method, rawResult);
++    const decodedResult = (0, decodeJsonRpcResponse_1.decodeJsonRpcResponse)(
++      rawResult,
++      tType
++    );
++    const blockNumber = getMaxAffectedBlockNumber(decodedResult);
++    if (this._canBeCached(blockNumber)) {
++      this._storeInCache(cacheKey, decodedResult);
++      if (this._forkCachePath !== undefined) {
++        await this._storeInDiskCache(this._forkCachePath, cacheKey, rawResult);
++      }
++    }
++    return decodedResult;
++  }
++  async _performBatch(batch, getMaxAffectedBlockNumber) {
++    // Perform Batch caches the entire batch at once.
++    // It could implement something more clever, like caching per request
++    // but it's only used in one place, and those other requests aren't
++    // used anywhere else.
++    const cacheKey = this._getBatchCacheKey(batch);
++    const cachedResult = this._getFromCache(cacheKey);
++    if (cachedResult !== undefined) {
++      return cachedResult;
++    }
++    if (this._forkCachePath !== undefined) {
++      const diskCachedResult = await this._getBatchFromDiskCache(
++        this._forkCachePath,
++        cacheKey,
++        batch.map((b) => b.tType)
++      );
++      if (diskCachedResult !== undefined) {
++        this._storeInCache(cacheKey, diskCachedResult);
++        return diskCachedResult;
++      }
++    }
++    const rawResults = await this._sendBatch(batch);
++    const decodedResults = rawResults.map((result, i) => {
++      this.addAccessList(batch[i].method, result);
++      return (0, decodeJsonRpcResponse_1.decodeJsonRpcResponse)(
++        result,
++        batch[i].tType
++      );
++    });
++    const blockNumber = getMaxAffectedBlockNumber(decodedResults);
++    if (this._canBeCached(blockNumber)) {
++      this._storeInCache(cacheKey, decodedResults);
++      if (this._forkCachePath !== undefined) {
++        await this._storeInDiskCache(this._forkCachePath, cacheKey, rawResults);
++      }
++    }
++    return decodedResults;
++  }
+ }
+ exports.JsonRpcClient = JsonRpcClient;
+ //# sourceMappingURL=client.js.map
+\ No newline at end of file
