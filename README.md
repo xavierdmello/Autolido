@@ -9,7 +9,7 @@ Read the complete outline here: [Earning Yield On Lido Staked Assets While Minim
 - 🔄 Automatic Profit Realization & Compounding
 - ⚖️ Optimized Borrowing
 - 🌊 Liquidation Protection
-- 🛡️ OpenZepplin Defender Integration
+- 🛡️ OpenZeppelin Defender Integration
 - ⛽ Contract Gas Optimization
 - 👨‍💻 CLI
 - 🚧 Testnet Deployment & Demo Site
