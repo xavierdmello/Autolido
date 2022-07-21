@@ -18,4 +18,4 @@ Read the complete outline here: [Earning Yield On Lido Staked Assets While Minim
 ### Can I try it right now?
 Autolido is nowhere near feature complete yet and won't work as intended.
 
-If you are brave, feel free to test out features and go through the code with [Hardhat](https://hardhat.org/).
+If you are brave, feel free to test out features and go through the code with [Hardhat](https://hardhat.org/) & [Yarn](https://yarnpkg.com/).
