@@ -3,8 +3,8 @@ Read the complete outline here: [Earning Yield On Lido Staked Assets While Minim
 
 ## Milestones
 - 📜 Whitepaper 7/1/2022 ✅
+- 🏧 Deposits 7/23/2022 ✅
 ### To-do:
-- 🏧 Deposits
 - 💰 Withdrawals
 - 🔄 Automatic Profit Realization & Compounding
 - ⚖️ Optimized Borrowing
